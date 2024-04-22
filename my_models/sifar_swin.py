@@ -656,6 +656,21 @@ class SwinTransformer(nn.Module):
             x = nn.functional.interpolate(x, size=self.img_size,mode='bilinear')
         x = rearrange(x, 'b (th tw c) h w -> b c (th h) (tw w)', th=self.super_img_rows, c=3)
         return x
+    
+    def create_center_super_img(self, x):
+        input_size = x.shape[-2:]
+        if input_size != to_2tuple(self.img_size):
+            x = nn.functional.interpolate(x, size=self.img_size,mode='bilinear')
+        
+        x = rearrange(x, 'b (th tw c) h w -> b c (th h) (tw w)', th=self.super_img_rows, c=3)
+        x_copy = x.clone()
+        resized_x = nn.functional.interpolate(x_copy, size=(224, 224), mode='bilinear')
+        center_h = (x.shape[2] - 224) // 2
+        center_w = (x.shape[3] - 224) // 2
+        
+        x[:, :, center_h:center_h+224, center_w:center_w+224] = resized_x
+
+        return x
 
     def pad_frames(self, x):
         frame_num = self.duration - self.frame_padding
