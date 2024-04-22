@@ -414,7 +414,7 @@ class VideoDataSet(data.Dataset):
         tmp = []
         original_video_numbers = 0
         for x in open(self.list_file):
-            elements = x.strip().split(self.separator)
+            elements = x.split()
             start_frame = int(elements[1])
             end_frame = int(elements[2])
             total_frame = end_frame - start_frame + 1
