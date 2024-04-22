@@ -665,6 +665,28 @@ class SwinTransformer(nn.Module):
         assert x.shape[1] == 3 * self.duration, 'frame number %d not the same as adjusted input size %d' % (x.shape[1], 3 * self.duration)
 
         return x
+    
+    def pad_frames_middle(self, x):
+        frame_num = self.duration - self.frame_padding
+        x = x.view((-1, 3 * frame_num) + x.size()[2:])
+        
+        # padding_on_each_side = self.frame_padding // 2
+        padding_on_left_side = (3 * self.frame_padding) // 2
+        padding_on_right_side = (3 * self.frame_padding) - padding_on_left_side
+        
+        # Split tensor in half along the frame dimension
+        x_left_half, x_right_half = torch.chunk(x, 2, dim=1)
+        
+        # Create padding tensors
+        padding_tensor_left = torch.zeros((x_left_half.shape[0], padding_on_left_side) + x_left_half.size()[2:])
+        padding_tensor_right = torch.zeros((x_right_half.shape[0], padding_on_right_side) + x_right_half.size()[2:])
+        
+        # Concatenate tensors with padding in the middle
+        x_padded = torch.cat((x_left_half, padding_tensor_left,  padding_tensor_right, x_right_half), dim=1)
+        
+        assert x_padded.shape[1] == 3 * self.duration, 'Frame number %d not the same as adjusted input size %d' % (x_padded.shape[1], 3 * self.duration)
+
+        return x_padded
 
     # need to find a better way to do this, maybe torch.fold?
     def create_image_pos_embed(self):
